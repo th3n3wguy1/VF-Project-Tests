@@ -9,6 +9,7 @@ ToDO:
 3. Belohnung für Zahlende. ANregung schaffen
 4. Arbitrum??
 5. Strategie Smart Contract (getInverstmentAdvice)
+6. Capitalpool allgemeine Funktion klären, Anteile, Token auszahlen,...
 
 Erste Deposits in Contract selbst müssen von außerhalb (TypeSkript) erfolgen.
 
