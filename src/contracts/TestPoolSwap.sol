@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: MIT 
 
-// Erster Entwurf für Contract-Based-Swapping. Logik nicht mal ansatzweise final.
-// Rollen für Zugriffskontrollen müssen hinzugefügt werden.
-// Erste Deposits in Contract selbst müssen von außerhalb (TypeSkript) erfolgen.
+/*
+Erster Entwurf für Contract-Based-Swapping. Logik nicht mal ansatzweise final.
+
+ToDO:
+1. Rollen für Zugriffskontrollen müssen hinzugefügt werden
+2. Externe Swapper zahlen Gas-Fees
+3. Belohnung für Zahlende. ANregung schaffen
+4. Arbitrum??
+5. Strategie Smart Contract (getInverstmentAdvice)
+
+Erste Deposits in Contract selbst müssen von außerhalb (TypeSkript) erfolgen.
+
+*/
 
 pragma solidity ^0.8.0;
 
@@ -11,7 +21,7 @@ import './dependencies/ISwapRouter.sol';
 import './dependencies/TransferHelper.sol';
 
 
-contract TestPool{
+contract VFPool{
    
     address public constant DAI = 0xaD6D458402F60fD3Bd25163575031ACDce07538D;
     address public constant WETH9 = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
