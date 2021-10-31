@@ -11,29 +11,61 @@ contract TestPool{
    
     address public constant DAI = 0xaD6D458402F60fD3Bd25163575031ACDce07538D;
     address public constant WETH9 = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
-   
-    address private owner1 = 0x7ba532dDD8Bae59205D4928B5d9aDb9113AA6Cbe;
-    address private owner2 = 0x829aDc66aaF720A896447e66a0163f74b09D3FF4;
-    
+  
     ISwapRouter public immutable swapRouter;
   
+    struct Investor{
+        IERC20 deposit_token;
+        uint256 deposit_amount;
+    }
+ 
+    mapping(address => Investor) private Investors;
+    
+    mapping(address => string) private Tokens;
    
-    mapping (address => uint256) private Investor;
-   
+    address[] private InvestorAddre;
    
     uint24 public constant poolFee = 3000;
+    uint256 private ID;
 
     constructor() {
+        
+        buildTokenAddresses();
+        ID = 0;
         swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     }
     
-    
-    function deposit() public payable{
+    function buildTokenAddresses() private{
         
-         Investor[msg.sender] += msg.value;
-
+        Tokens[DAI] = "DAI";
+        Tokens[WETH9] = "WETH9";
+        
     }
-   
+    
+    function addInvestor(address address_, address token_, uint256 amount_) public{
+        
+        Investor storage investor = Investors[address_];
+        investor.deposit_token = IERC20(token_);
+        investor.deposit_amount = amount_;
+        
+        InvestorAddre.push(address_);
+    }
+    
+    
+    function withdraw(address _address, address _token, uint256 _amount) public payable {
+        
+        require(Investors[_address].deposit_token == IERC20(_token), "No balance under this token");
+        require(Investors[_address].deposit_amount >= _amount, "Not enough balance in Account");
+        
+        require(IERC20(DAI).balanceOf(address(this)) >= _amount, "Contract does currently not hold enough of this token");
+        
+        Investors[_address].deposit_amount -= _amount;
+        
+        IERC20(_token).transfer(_address, _amount);
+        
+    }
+    
+    
     
     function getCapitalDAI() public view returns (uint256){
         
