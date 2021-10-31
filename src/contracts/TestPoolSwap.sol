@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: MIT 
 
+// Erster Entwurf für Contract-Based-Swapping. Logik nicht mal ansatzweise final.
+// Rollen für Zugriffskontrollen müssen hinzugefügt werden.
+// Erste Deposits in Contract selbst müssen von außerhalb (TypeSkript) erfolgen.
+
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
@@ -13,28 +17,27 @@ contract TestPool{
     address public constant WETH9 = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
   
     ISwapRouter public immutable swapRouter;
-  
+   
+    // Investoren dokumentieren. 
     struct Investor{
         IERC20 deposit_token;
         uint256 deposit_amount;
     }
- 
     mapping(address => Investor) private Investors;
     
+    // Später vlt verwenden um Input zu vereinfachen.
     mapping(address => string) private Tokens;
    
     address[] private InvestorAddre;
    
     uint24 public constant poolFee = 3000;
-    uint256 private ID;
 
     constructor() {
-        
         buildTokenAddresses();
-        ID = 0;
         swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     }
     
+    // Im Moment nur for Fun
     function buildTokenAddresses() private{
         
         Tokens[DAI] = "DAI";
@@ -42,6 +45,7 @@ contract TestPool{
         
     }
     
+    // Neuen Investor erstellen. Muss beim Deposit (TypeSkript) zusätzlich aufgerufen werden
     function addInvestor(address address_, address token_, uint256 amount_) public{
         
         Investor storage investor = Investors[address_];
@@ -51,9 +55,10 @@ contract TestPool{
         InvestorAddre.push(address_);
     }
     
-    
+    // Auszahlen von eingezahlten Token
     function withdraw(address _address, address _token, uint256 _amount) public payable {
         
+        // Im Moment nur zu Test-zwecken auf einzelne Punkte geachtet. Nicht final
         require(Investors[_address].deposit_token == IERC20(_token), "No balance under this token");
         require(Investors[_address].deposit_amount >= _amount, "Not enough balance in Account");
         
@@ -66,7 +71,7 @@ contract TestPool{
     }
     
     
-    
+    //Getter Funktionen
     function getCapitalDAI() public view returns (uint256){
         
         return IERC20(DAI).balanceOf(address(this));
@@ -85,6 +90,7 @@ contract TestPool{
         
     }
     
+    // Hard-Coded Swap funktionen
     function swapExactDaiToWETH(uint256 amountIn) external payable returns (uint256 amountOut) {
     
         // Approve the router to spend DAI.
