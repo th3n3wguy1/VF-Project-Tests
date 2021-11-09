@@ -28,16 +28,22 @@ contract InvestorPool {
         stakes[_address] = _stake;
     }
     
-    function removeInvestorAddress(address _address) public {
+    function removeInvestorAddress(address _address) public payable {
         //remove stake
         delete stakes[_address];
         //remove address from stored addresses
-        address[] memory newInvestors;
-        for(uint i=0; i<investors.length; i++){
+        uint256 investorsLength = investors.length;
+        address[] memory investorsTemp = new address[](investorsLength-1);
+        for(uint i=0; i<investorsLength; i++){
             if(investors[i]!=_address){
-                newInvestors[i] = investors[i];
+                investorsTemp[i] = investors[i];
             }
-            investors = newInvestors;
+        }
+        for(uint i=0; i<investorsLength; i++){
+            investors.pop();
+        }
+        for(uint i=0; i<investorsLength-1; i++){
+            investors.push( investorsTemp[i] );
         }
     }
     
