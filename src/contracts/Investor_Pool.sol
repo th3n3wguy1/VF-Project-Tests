@@ -28,12 +28,14 @@ contract InvestorPool {
         stakes[_address] = _stake;
     }
     
-    function removeInvestorAddress(address _address) public {
+    function removeInvestorAddress(address _address) public{
+        
         //remove stake
         //delete stakes[_address];
         stakes[_address] = 0;
         //remove address from stored addresses
         uint256 investorsLength = investors.length;
+        require(investorsLength > 0, "Cannot remove elements from empty array");
         address[] memory investorsTemp = new address[](investorsLength-1);
         
         uint c=0;
@@ -44,9 +46,10 @@ contract InvestorPool {
             }
         }
         
-        for(uint i=0; i<investorsLength; i++){
+        /*for(uint i=0; i<investorsLength; i++){
             investors.pop();
-        }
+        }*/
+        delete investors;
         
         for(uint i=0; i<investorsLength-1; i++){
             investors.push( investorsTemp[i] );
@@ -56,11 +59,20 @@ contract InvestorPool {
     
     
     function addInvestorAddress(address _address)public {
+        require(_investorsContainsAddress(_address) == false, "Address already stored.");
         investors.push(_address);
-        _logStoredInvestorInformation();
     }
     
-    function _logStoredInvestorInformation()public {
+    function _investorsContainsAddress(address _address) private view returns (bool){
+        for(uint i=0;i<investors.length;i++){
+            if(investors[i] == _address){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function _logStoredInvestorInformation()public{
         for(uint i=0; i<investors.length; i++){
             //log address
             emit LogAddress( investors[i] );
