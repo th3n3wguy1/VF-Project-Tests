@@ -30,10 +30,8 @@ contract InvestorPool {
     
     
     function removeInvestorAddress(address _address) public{
-        
         //remove stake
-        //delete stakes[_address];
-        stakes[_address] = 0;
+        delete stakes[_address];
         //remove address from stored addresses
         uint256 investorsLength = investors.length;
         require(investorsLength > 0, "Cannot remove elements from empty array");
@@ -47,9 +45,6 @@ contract InvestorPool {
             }
         }
         
-        /*for(uint i=0; i<investorsLength; i++){
-            investors.pop();
-        }*/
         delete investors;
         
         for(uint i=0; i<investorsLength-1; i++){
@@ -59,7 +54,7 @@ contract InvestorPool {
     
     
     
-    function addInvestorAddress(address _address)public {
+    function addInvestorAddress(address _address) private {
         require(_investorsContainsAddress(_address) == false, "Address already stored.");
         investors.push(_address);
     }
@@ -73,7 +68,7 @@ contract InvestorPool {
         return false;
     }
     
-    function _sumInvestorStakes() private view returns (uint256){
+    function _sumInvestorStakes() public view returns (uint256){
         uint256 sum = 0;
         for(uint i=0; i<investors.length; i++){
             sum = sum + stakes[investors[i]];
@@ -94,6 +89,17 @@ contract InvestorPool {
         uint256 oldBalance = this.balance() - amount;
         for(uint i=0; i<investors.length; i++){
             stakes[investors[i]] = (stakes[investors[i]]*oldBalance)/(oldBalance + amount);
+        }
+    }
+
+    function recalculateAllStakesOnWithdraw(uint256 amount) private {
+        if(investors.length == 1){
+            stakes[investors[0]] = totalSupply;
+        }else{
+            uint256 oldBalance = this.balance();
+            for(uint i=0; i<investors.length; i++){
+                stakes[investors[i]] = (stakes[investors[i]]*oldBalance)/(oldBalance - amount);
+            }
         }
     }
     
@@ -117,5 +123,14 @@ contract InvestorPool {
             recalculateAllStakesOnDeposit(msg.value);
             stakes[msg.sender] = totalSupply - _sumInvestorStakes() + stakes[msg.sender];
         }
+    }
+    
+    function withdraw() external payable{
+        uint256 amount = (stakes[msg.sender]*this.balance())/totalSupply;
+        removeInvestorAddress(msg.sender);
+        recalculateAllStakesOnWithdraw(amount);
+        (bool success, ) = msg.sender.call{value:amount}("");
+        require(success, "Transfer failed.");
+        require(_investorsContainsAddress(msg.sender)==false,"Remove failed.");
     }
 }
