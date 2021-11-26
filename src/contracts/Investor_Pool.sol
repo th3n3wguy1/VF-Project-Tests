@@ -75,6 +75,16 @@ contract InvestorPool {
         }
         return sum;
     }
+
+    function _smallestInvestorByStake() private view returns (address){
+        address investor = investors[0];
+        for(uint i=1; i<investors.length; i++){
+            if(stakes[investors[i]] < stakes[investor]){
+                investor = investors[i];
+            }
+        }
+        return investor;
+    }
     
     function _logStoredInvestorInformation()public{
         for(uint i=0; i<investors.length; i++){
@@ -94,11 +104,25 @@ contract InvestorPool {
 
     function recalculateAllStakesOnWithdraw(uint256 amount) private {
         if(investors.length == 1){
+            //stake = total supply
             stakes[investors[0]] = totalSupply;
         }else{
-            uint256 oldBalance = this.balance();
-            for(uint i=0; i<investors.length; i++){
-                stakes[investors[i]] = (stakes[investors[i]]*oldBalance)/(oldBalance - amount);
+            if(investors.length > 0){
+                //calculate stakes
+                uint256 oldBalance = this.balance();
+                for(uint i=0; i<investors.length; i++){
+                    stakes[investors[i]] = (stakes[investors[i]]*oldBalance)/(oldBalance - amount);
+                }
+                //divide remainder between investors
+                uint256 remainder = totalSupply - _sumInvestorStakes();
+                uint256 share = remainder / investors.length;
+                if(share > 0){
+                    for(uint i=0; i<investors.length; i++){
+                        stakes[investors[i]] = stakes[investors[i]] + share;
+                    }
+                }
+                address smallest = _smallestInvestorByStake();
+                stakes[smallest] = stakes[smallest] + (remainder - share * investors.length);
             }
         }
     }
@@ -126,11 +150,11 @@ contract InvestorPool {
     }
     
     function withdraw() external payable{
+        require(_investorsContainsAddress(msg.sender), "Address not investor.");
         uint256 amount = (stakes[msg.sender]*this.balance())/totalSupply;
         removeInvestorAddress(msg.sender);
         recalculateAllStakesOnWithdraw(amount);
         (bool success, ) = msg.sender.call{value:amount}("");
         require(success, "Transfer failed.");
-        require(_investorsContainsAddress(msg.sender)==false,"Remove failed.");
     }
 }
