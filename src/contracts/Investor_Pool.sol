@@ -2,6 +2,8 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
+import 'https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol';
+
 contract InvestorPool {
     
     //Events for logging purposes
@@ -20,6 +22,15 @@ contract InvestorPool {
     
     //minimum deposit 10'000'000'000'000'000 wei = 0.01 ether
     uint256 minDeposit = 10000000000000000;
+    
+    //swapable tokens
+    //Ropsten Dai
+    ERC20 stableToken = ERC20(0xaD6D458402F60fD3Bd25163575031ACDce07538D);
+    //Ropsten WETH
+    ERC20 volatileToken = ERC20(0x0a180A76e4466bF68A7F86fB029BEd3cCcFaAac5);
+
+    //contract stable state: stable=true, volatile=false
+    bool stableState = true;
     
     
     //Funktionen werden noch korrekt implementiert
@@ -86,13 +97,21 @@ contract InvestorPool {
         return investor;
     }
     
-    function _logStoredInvestorInformation()public{
+
+    function _logAddresses() external view returns (address[] memory){
+        return investors;
+    }
+
+    /*function _logStakes() external view returns (uint256[] memory){
+        uint256[] memory stakesArray;
         for(uint i=0; i<investors.length; i++){
-            //log address
-            emit LogAddress( investors[i] );
-            //log corresponding stakes
-            emit LogNumber( stakes[ investors[i] ] );
+            stakesArray[i] = stakes[investors[i]];
         }
+        return stakesArray;
+    }*/
+
+    function _logTokens(address a) public view returns(uint, uint){
+        return (stableToken.balanceOf(a), volatileToken.balanceOf(a));
     }
     
     function recalculateAllStakesOnDeposit(uint256 amount) private {
@@ -128,7 +147,17 @@ contract InvestorPool {
     }
     
     function balance() external view returns (uint256){
-        return address(this).balance;
+        //hier aus beiden token wert errechnen, der eth wei einheit entspricht
+        //tokenpreise müssen mit oracle abgefragt werden-> nicht unbedingt
+
+        //uint256 priceStableToken;
+        //uint256 priceVolatieToken; 
+        //return address(this).balance;
+        if(stableState){
+            return stableToken.balanceOf(address(this));
+        }else{
+            return volatileToken.balanceOf(address(this));
+        }
     }
     
     
@@ -154,7 +183,12 @@ contract InvestorPool {
         uint256 amount = (stakes[msg.sender]*this.balance())/totalSupply;
         removeInvestorAddress(msg.sender);
         recalculateAllStakesOnWithdraw(amount);
-        (bool success, ) = msg.sender.call{value:amount}("");
-        require(success, "Transfer failed.");
+        //(bool success, ) = //msg.sender.call{value:amount}("");
+        if(stableState){
+            stableToken.transfer(msg.sender, amount);
+        }else{
+            volatileToken.transfer(msg.sender, amount);
+        }
+        //require(success, "Transfer failed.");
     }
 }
